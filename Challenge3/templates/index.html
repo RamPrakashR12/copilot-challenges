@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Items API</title>
+    <style>
+        form input {
+            display: inline-block;
+            margin: 5px;
+        }
+        #search {
+            width: 300px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+    </style>
+    <script>
+        async function fetchItems() {
+            const response = await fetch('/api/items');
+            const items = await response.json();
+            const tableBody = document.getElementById('items-body');
+            tableBody.innerHTML = '';
+            items.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.id}</td>
+                    <td>${item.name}</td>
+                    <td>${item.description}</td>
+                    <td>${item.price}</td>
+                    <td><button onclick="deleteItem(${item.id})">Delete</button></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        async function addItem() {
+            const id = document.getElementById('id').value;
+            const name = document.getElementById('name').value;
+            const description = document.getElementById('description').value;
+            const price = document.getElementById('price').value;
+            const newItem = { id, name, description, price: parseFloat(price) };
+
+            const response = await fetch('/api/items', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newItem)
+            });
+
+            if (response.status === 201) {
+                fetchItems();
+            }
+        }
+
+        async function updateItem() {
+            const id = document.getElementById('id').value;
+            const name = document.getElementById('name').value;
+            const description = document.getElementById('description').value;
+            const price = document.getElementById('price').value;
+            const updatedItem = { name, description, price: parseFloat(price) };
+
+            const response = await fetch(`/api/items/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedItem)
+            });
+
+            if (response.status === 200) {
+                fetchItems();
+            }
+        }
+
+        async function deleteItem(id) {
+            const response = await fetch(`/api/items/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (response.status === 204) {
+                fetchItems();
+            }
+        }
+
+        async function searchItems() {
+            const query = document.getElementById('search').value;
+            const response = await fetch(`/api/items/search?q=${query}`);
+            const items = await response.json();
+            const tableBody = document.getElementById('items-body');
+            tableBody.innerHTML = '';
+            items.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.id}</td>
+                    <td>${item.name}</td>
+                    <td>${item.description}</td>
+                    <td>${item.price}</td>
+                    <td><button onclick="deleteItem(${item.id})">Delete</button></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchItems);
+    </script>
+</head>
+<body>
+    <h1>Items API</h1>
+    <input type="text" id="search" placeholder="Search by ID, name, or description">
+    <button onclick="searchItems()">Search</button>
+
+    <h2>Add / Update Item</h2>
+    <form onsubmit="event.preventDefault();">
+        <input type="number" id="id" placeholder="ID" required>
+        <input type="text" id="name" placeholder="Name" required>
+        <input type="text" id="description" placeholder="Description" required>
+        <input type="number" id="price" placeholder="Price" required>
+        <button onclick="addItem()">POST Item</button>
+        <button onclick="updateItem()">PUT Item</button>
+    </form>
+
+    <h2>Items List</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="items-body">
+        </tbody>
+    </table>
+</body>
+</html>
